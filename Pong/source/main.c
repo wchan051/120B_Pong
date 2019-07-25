@@ -9,8 +9,7 @@
  */
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "io.h" 
-#include "timer.h"
+#include "io.h"
 
 unsigned char READY = 0;
 unsigned char WRITE = 0;
