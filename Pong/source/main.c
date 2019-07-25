@@ -13,26 +13,16 @@
 #include "io.h" 
 #include "timer.h"
 
-#define read_eeprom_word(address) eeprom_read_word ((const uint16_t*)address)
-#define write_eeprom_word(address,value) eeprom_write_word ((uint16_t*)address,(uint16_t)value)
-#define update_eeprom_word(address,value) eeprom_update_word ((uint16_t*)address,(uint16_t)value)
-
-
-unsigned char tmpD;
-
-unsigned char EEMEM my_eeprom_array[6];
-
 unsigned char FINISH = 0;
 unsigned char WRITE = 0;
 unsigned char READY = 0;
-unsigned char SINGLE = 0;
-unsigned char MULT = 0;
-unsigned char DIFF = 0;
+unsigned char SINGLEPLAYER = 0;
+unsigned char MULTIPLAYER = 0;
 
-unsigned char X = 0; //P1 score. //start at -1 because of +2 at first p2 score bug
-unsigned char Y = 0; //P2 score
-unsigned char XSCORE = 0; //boolean
-unsigned char YSCORE = 0; //boolean
+unsigned char P1SCORE = 0; 
+unsigned char P2SCORE = 0; 
+unsigned char P1BOOL = 0; 
+unsigned char P2BOOL = 0; 
 
 unsigned char P1ROW_MOVEMENT[6] = {0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0};
 unsigned char P1index = 4;
@@ -47,9 +37,16 @@ unsigned char BALLCOL_MOVEMENT[8] = {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0
 unsigned char BRindex = 3;
 unsigned char BCindex = 3;
 
-//MENU
-enum Menus {home, wait, difficulty, play, wait_score, writeX, writeY, winX, winY, holdwin, rwait, rwait1, rpage1, rwait3, rpage3, rwait4} Menu;
+
+#define read_eeprom_word(address) eeprom_read_word ((const uint16_t*)address)
+#define write_eeprom_word(address,value) eeprom_write_word ((uint16_t*)address,(uint16_t)value)
+#define update_eeprom_word(address,value) eeprom_update_word ((uint16_t*)address,(uint16_t)value)
+
+enum Menus {home, wait, play, wait_score, writeP1, writeP2, winP1, winP2, record_win} Menu;
 unsigned short counterwin = 0;
+unsigned char EEMEM eeprom_array[6];
+unsigned char tmpD;
+
 void MenuScreen()
 {
 	switch(Menu)
@@ -57,28 +54,23 @@ void MenuScreen()
 		case home:
 			if((tmpD & 0x1F) == 0x00)
 			{
-				MULT = 0;
-				SINGLE = 0;
-				DIFF = 0;
-				X = 0;
-				Y = 0;
+				SINGLEPLAYER = 0;
+				MULTIPLAYER = 0;
+				P1SCORE = 0;
+				P2SCORE = 0;
 				Menu = home;
 			}
 			else if((tmpD & 0x1F) == 0x01)
 			{
-				SINGLE = 1;
-				MULT = 0;
+				SINGLEPLAYER = 1;
+				MULTIPLAYER = 0;
 				Menu = wait;
 			}
 			else if((tmpD & 0x1F) == 0x02)
 			{
-				MULT = 1;
-				SINGLE = 0;
+				SINGLEPLAYER = 0;
+				MULTIPLAYER = 1;
 				Menu = wait;
-			}
-			else if((tmpD & 0x1F) == 0x04)
-			{
-				Menu = rwait;
 			}
 			break;
 		case wait:
@@ -86,120 +78,60 @@ void MenuScreen()
 			{
 				if((tmpD & 0x1F) == 0x01)
 				{
-					SINGLE = 1;
-					MULT = 0;
+					SINGLEPLAYER = 1;
+					MULTIPLAYER = 0;
 				}
 				else if((tmpD & 0x1F) == 0x02)
 				{
-					MULT = 1;
-					SINGLE = 0;
+					SINGLEPLAYER = 0;
+					MULTIPLAYER = 1;
 				}
 					
 				Menu= wait;
 			}
 			else
-				Menu = difficulty;
-			break;
-		case difficulty:
-			if((tmpD & 0x1F) == 0)
-				Menu = difficulty;
-			else if((tmpD & 0x1F) == 0x01)
-			{
-				DIFF = 2;
 				Menu = play;
-				WRITE = 0;
-			}
-			else if((tmpD & 0x1F) == 0x02)
-			{	
-				DIFF = 1;
-				Menu = play;
-				WRITE = 0;
-			}
-			else
-				Menu = difficulty;
 			break;
 		case play:
 			Menu = wait_score;
 			break;
 		case wait_score:
-			if(!XSCORE && !YSCORE)
+			if(!P1BOOL && !P2BOOL)
 				Menu = wait_score;
-			else if(XSCORE)
-				Menu = writeX;
-			else if(YSCORE)
-				Menu = writeY;
+			else if(P1BOOL)
+				Menu = writeP1;
+			else if(P2BOOL)
+				Menu = writeP2;
 			break;
-		case writeX:
-			if(X == 4) //X WINS
-				Menu = winX;
+		case writeP1:
+			if(P1SCORE == 4) 
+				Menu = winP1;
 			else
 				Menu = wait_score;
 			break;
-		case writeY:
-			if(Y == 4) //Y WINS
-				Menu = winY;
+		case writeP2:
+			if(P2SCORE == 4)
+				Menu = winP2;
 			else
 				Menu = wait_score;
 			break;
-		case winX:
-			Menu = holdwin;
+		case winP1:
+			Menu = record_win;
 			break;
-		case winY:
-			Menu = holdwin;
+		case winP2:
+			Menu = record_win;
 			break;
-		case holdwin:
-			MULT = 0;
-			SINGLE = 0;
+		case record_win:
+			SINGLEPLAYER = 0;
+			MULTIPLAYER = 0;
 			if(counterwin == 50000)
 			{
 				counterwin = 0;
 				Menu = home;
 			}
 			else
-				Menu = holdwin;
+				Menu = record_win;
 			break;
-		
-		case rwait:
-			if((tmpD & 0x1F) != 0)
-			{
-				Menu = rwait;
-			}
-			else
-				Menu = rwait1;
-			break;
-		
-		case rwait1:
-			Menu = rpage1;
-			break;
-		case rpage1:
-			if((tmpD & 0x1F) == 0)
-			{
-				Menu = rpage1;
-			}
-			else if((tmpD & 0x1F) == 0x04)
-				Menu = rwait3;
-			break;
-		
-		case rwait3:
-			Menu = rpage3;
-			break;
-		case rpage3:
-			if((tmpD & 0x1F) == 0)
-			{
-				Menu = rpage3;
-			}
-			else if((tmpD & 0x1F) == 0x04)
-				Menu = rwait4;
-			break;
-		case rwait4:
-			if((tmpD & 0x1F) != 0)
-			{
-				Menu = rwait4;
-			}
-			else
-				Menu = home;
-			break;
-			
 	}
 	switch(Menu)
 	{
@@ -209,91 +141,58 @@ void MenuScreen()
 			if(WRITE == 0)
 			{
 				LCD_ClearScreen();
-				LCD_DisplayString(1, "B1) PVE B2) PVP");
+				LCD_DisplayString(1, "B1) SINGLEPLAYERB2) MULTIPLAYER");
 				WRITE = 1;
 			}
 			break;
 		case wait:
 			WRITE = 0;
 			break;
-		case difficulty:
-			if(WRITE == 0)
-			{
-				LCD_ClearScreen();
-				LCD_DisplayString(1, "Speed: 1)Slow          2)Fast");
-				WRITE = 1;			
-			}
-			break;
 		case play:
 			READY = 1;
 			if(WRITE == 0)
 			{
-				LCD_DisplayString(1, "Score: P1)0           P2)0");
+				LCD_DisplayString(1, "Score:          P1)        P2)");
 				WRITE = 1;
 			}
 			break;
 		case wait_score:
 			break;
-		case writeX:
+		case writeP1:
 			LCD_Cursor(20);
-			LCD_WriteData(X + '0');
+			LCD_WriteData(P1SCORE + '0');
 			break;
-		case writeY:
+		case writeP2:
 			LCD_Cursor(31);
-			LCD_WriteData(Y + '0');
+			LCD_WriteData(P2SCORE + '0');
 			break;
-		case winX:
-			MULT = 0;
-			SINGLE = 0;
+		case winP1:
+			SINGLEPLAYER = 0;
+			MULTIPLAYER = 0;
 			READY = 0;
 			LCD_DisplayString(1, "    P1 WINS!");
-			write_eeprom_word(&my_eeprom_array[0], read_eeprom_word(&my_eeprom_array[0]) + 1);
-			write_eeprom_word(&my_eeprom_array[3], read_eeprom_word(&my_eeprom_array[3]) + 1);
+			write_eeprom_word(&eeprom_array[0], read_eeprom_word(&eeprom_array[0]) + 1);
+			write_eeprom_word(&eeprom_array[3], read_eeprom_word(&eeprom_array[3]) + 1);
 			break;
-		case winY:
-			MULT = 0;
-			SINGLE = 0;
+		case winP2:
+			SINGLEPLAYER = 0;
+			MULTIPLAYER = 0;
 			READY = 0;
 			LCD_DisplayString(1, "    P2 WINS!");
-			write_eeprom_word(&my_eeprom_array[0], read_eeprom_word(&my_eeprom_array[0]) + 1);
-			write_eeprom_word(&my_eeprom_array[5], read_eeprom_word(&my_eeprom_array[5]) + 1);
+			write_eeprom_word(&eeprom_array[0], read_eeprom_word(&eeprom_array[0]) + 1);
+			write_eeprom_word(&eeprom_array[5], read_eeprom_word(&eeprom_array[5]) + 1);
 			break;
-		case holdwin:
-			MULT = 0;
-			SINGLE = 0;
+		case record_win:
+			SINGLEPLAYER = 0;
+			MULTIPLAYER = 0;
 			READY = 0;
 			counterwin++;
-			WRITE = 0;
-			break;
-			
-		case rwait:
-			break;	
-		case rwait1:
-			LCD_DisplayString(1, "    RECORDS:    # Played: 0");
-			LCD_Cursor(27);
-			LCD_WriteData(read_eeprom_word(&my_eeprom_array[0]) + '0');
-			break;
-		case rpage1:
-			
-			break;
-		
-		case rwait3:
-			LCD_DisplayString(1, "WP1: 0   WP2: 0       END");
-			LCD_Cursor(6);
-			LCD_WriteData(read_eeprom_word(&my_eeprom_array[3]) + '0');
-			LCD_Cursor(15);
-			LCD_WriteData(read_eeprom_word(&my_eeprom_array[5]) + '0');
-			break;
-		case rpage3:
-			break;
-		case rwait4:
 			WRITE = 0;
 			break;
 	}	
 }
 
 
-//UPDATE LED MATRIX
 enum MatrixUpdate {wait_Ready, wait_Ready2, updateP1, updateP2, updateBall} Matrix;
 unsigned char a = 3;
 
@@ -369,8 +268,6 @@ void MatrixPlay()
 	}
 }
 
-
-//Movement P1
 enum Movement_P1 {wait_Ready_p1, move_p1, up_p1, down_p1, holdp1} MovementP1;
 unsigned short counter1 = 0;
 void MoveP1()
@@ -435,8 +332,6 @@ void MoveP1()
 	}
 }
 
-
-//Movement P2
 enum Movement_P2 {wait_Ready_p2, move_p2, up_p2, down_p2, holdp2} MovementP2;
 unsigned short counter2 = 0;
 void MoveP2()
@@ -444,9 +339,9 @@ void MoveP2()
 	switch(MovementP2)
 	{
 		case wait_Ready_p2:
-			if(!READY && !MULT)
+			if(!READY && !MULTIPLAYER)
 				MovementP2 = wait_Ready_p2;
-			else if (READY && MULT && !SINGLE)
+			else if (READY && MULTIPLAYER && !SINGLEPLAYER)
 				MovementP2 = move_p2;
 			else
 				MovementP2 = wait_Ready_p2;
@@ -454,7 +349,7 @@ void MoveP2()
 		case move_p2:
 			if(!READY)
 				MovementP2 = wait_Ready_p2;
-			else if(READY && MULT)
+			else if(READY && MULTIPLAYER)
 			{
 				if((!(tmpD & 0x04) && !(tmpD & 0x08)) || ((tmpD & 0x04) && (tmpD & 0x08)))
 					MovementP2 = move_p2;
@@ -503,9 +398,6 @@ void MoveP2()
 	}
 }
 
-
-
-//Movement P2BOT
 enum Movement_P2BOT {wait_Ready_p2bot, move_p2bot, up_p2bot, down_p2bot, holdp2bot} MovementP2bot;
 unsigned short counter2bot = 0;
 void MoveP2bot()
@@ -513,9 +405,9 @@ void MoveP2bot()
 	switch(MovementP2bot)
 	{
 		case wait_Ready_p2bot:
-			if(!READY && !SINGLE)
+			if(!READY && !SINGLEPLAYER)
 				MovementP2bot = wait_Ready_p2bot;
-			else if (READY && SINGLE && !MULT)
+			else if (READY && SINGLEPLAYER && !MULTIPLAYER)
 				MovementP2bot = move_p2bot;
 			else
 				MovementP2bot = wait_Ready_p2bot;
@@ -523,7 +415,7 @@ void MoveP2bot()
 		case move_p2bot:
 			if(!READY)
 				MovementP2 = wait_Ready_p2bot;
-			else if(READY && SINGLE)
+			else if(READY && SINGLEPLAYER)
 			{
 				if((BRindex < P2index))
 					MovementP2bot = down_p2bot;
@@ -572,9 +464,7 @@ void MoveP2bot()
 	}
 }
 
-
-//BALL MOVEMENT
-enum BallMoves {wait_Ready_ball, start, start_wait, move_ball, holdball} BallMove;
+enum BallMoves {wait_ball, start, start_wait, move_ball, holdball} BallMove;
 unsigned short counterball = 0;
 unsigned short counterstart = 0;
 char hit = -1;
@@ -608,26 +498,26 @@ void BallPlay()
 			counterstart = 0;
 			if(BCindex == 0)
 			{
-				YSCORE = 1;
+				P2BOOL = 1;
 				BallMove = start;
 			}
 			else if(BCindex == 7)
 			{
-				XSCORE = 1;
+				P1BOOL = 1;
 				BallMove = start;
 			}
 			else
 				BallMove = holdball;
 			break;
 		case holdball:
-			if(counterball != (1000 * DIFF))
+			if(counterball != (4000))
 				BallMove = holdball;
 			else
 			{
 				counterball = 0;
-				if(XSCORE)
+				if(P1BOOL)
 					BallMove = start;
-				else if(YSCORE)
+				else if(P2BOOL)
 					BallMove = start;
 				else
 					BallMove = move_ball;
@@ -637,11 +527,11 @@ void BallPlay()
 	switch(BallMove)
 	{
 		case wait_Ready_ball:
-			XSCORE = 0;
-			YSCORE = 0;
+			P1BOOL = 0;
+			P2BOOL = 0;
 			break;
 		case start:
-			if(!XSCORE && !YSCORE)
+			if(!P1BOOL && !P2BOOL)
 			{
 				hit = -1;
 				wall = 0;
@@ -649,10 +539,10 @@ void BallPlay()
 				BCindex = 4;
 				P1index = 3;
 				P2index = 3;
-				XSCORE = 0;
-				YSCORE = 0;
+				P1BOOL = 0;
+				P2BOOL = 0;
 			}
-			else if(XSCORE)
+			else if(P1BOOL)
 			{
 				hit = 1;
 				wall = 0;
@@ -660,9 +550,9 @@ void BallPlay()
 				BCindex = 2;
 				P1index = 3;
 				P2index = 3;
-				X++;
+				P1SCORE++;
 			}
-			else if(YSCORE)
+			else if(P2BOOL)
 			{
 				hit = -1;
 				wall = 0;
@@ -670,12 +560,12 @@ void BallPlay()
 				BCindex = 5;
 				P1index = 3;
 				P2index = 3;
-				Y++;
+				P2SCORE++;
 			}
 			break;
 		case start_wait:
-			XSCORE = 0;
-			YSCORE = 0;
+			P1BOOL = 0;
+			P2BOOL = 0;
 			counterstart++;
 			break;
 		case move_ball:
@@ -686,7 +576,7 @@ void BallPlay()
 			if(BRindex > 6 || BRindex < 1)
 				wall = wall * -1;
 			
-			if(BCindex < 2) //P1 side
+			if(BCindex < 2)
 			{	
 				if(BRindex == 0)
 				{
@@ -804,13 +694,13 @@ void BallPlay()
 				}
 				else
 				{
-					YSCORE = 1;
+					P2BOOL = 1;
 					
 				}
 			}
 			
 			
-			else if(BCindex > 5) //on P2 side
+			else if(BCindex > 5) 
 			{
 				if(BRindex == 0)
 				{
@@ -928,7 +818,7 @@ void BallPlay()
 				}
 				else
 				{
-					XSCORE = 1;
+					P1BOOL = 1;
 				}
 			}
 			break;
@@ -950,12 +840,12 @@ int main(void)
 	TimerSet(1);
 	TimerOn();
 	
-	if(read_eeprom_word(&my_eeprom_array[0]) + '0' == '/')
-		write_eeprom_word(&my_eeprom_array[0], read_eeprom_word(&my_eeprom_array[0]) + 1);
-	if(read_eeprom_word(&my_eeprom_array[5]) + '0' == '/')
-		write_eeprom_word(&my_eeprom_array[5], read_eeprom_word(&my_eeprom_array[5]) + 1);
-	if(read_eeprom_word(&my_eeprom_array[3]) + '0' == '/')
-		write_eeprom_word(&my_eeprom_array[3], read_eeprom_word(&my_eeprom_array[3]) + 1);
+	if(read_eeprom_word(&eeprom_array[0]) + '0' == '/')
+		write_eeprom_word(&eeprom_array[0], read_eeprom_word(&eeprom_array[0]) + 1);
+	if(read_eeprom_word(&eeprom_array[5]) + '0' == '/')
+		write_eeprom_word(&eeprom_array[5], read_eeprom_word(&eeprom_array[5]) + 1);
+	if(read_eeprom_word(&eeprom_array[3]) + '0' == '/')
+		write_eeprom_word(&eeprom_array[3], read_eeprom_word(&eeprom_array[3]) + 1);
 
 	while(1)
     {
