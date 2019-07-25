@@ -824,9 +824,6 @@ int main(void)
 	
 	LCD_init();
 	
-	TimerSet(1);
-	TimerOn();
-	
 	while(1)
     {
 		tmpD = PIND;
