@@ -9,15 +9,14 @@
  */
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <avr/eeprom.h>
 #include "io.h" 
 #include "timer.h"
 
-unsigned char FINISH = 0;
-unsigned char WRITE = 0;
 unsigned char READY = 0;
+unsigned char WRITE = 0;
 unsigned char SINGLEPLAYER = 0;
 unsigned char MULTIPLAYER = 0;
+
 
 unsigned char P1SCORE = 0; 
 unsigned char P2SCORE = 0; 
@@ -37,28 +36,22 @@ unsigned char BALLCOL_MOVEMENT[8] = {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0
 unsigned char BRindex = 3;
 unsigned char BCindex = 3;
 
-
-#define read_eeprom_word(address) eeprom_read_word ((const uint16_t*)address)
-#define write_eeprom_word(address,value) eeprom_write_word ((uint16_t*)address,(uint16_t)value)
-#define update_eeprom_word(address,value) eeprom_update_word ((uint16_t*)address,(uint16_t)value)
-
-enum Menus {home, wait, play, wait_score, writeP1, writeP2, winP1, winP2, record_win} Menu;
+enum Menus {homeMenu, wait, play, wait_score, writeP1, writeP2, winP1, winP2, record_win} Menu;
 unsigned short counterwin = 0;
-unsigned char EEMEM eeprom_array[6];
 unsigned char tmpD;
 
 void MenuScreen()
 {
 	switch(Menu)
 	{
-		case home:
+		case homeMenu:
 			if((tmpD & 0x1F) == 0x00)
 			{
 				SINGLEPLAYER = 0;
 				MULTIPLAYER = 0;
 				P1SCORE = 0;
 				P2SCORE = 0;
-				Menu = home;
+				Menu = homeMenu;
 			}
 			else if((tmpD & 0x1F) == 0x01)
 			{
@@ -104,13 +97,13 @@ void MenuScreen()
 				Menu = writeP2;
 			break;
 		case writeP1:
-			if(P1SCORE == 4) 
+			if(P1SCORE == 5) 
 				Menu = winP1;
 			else
 				Menu = wait_score;
 			break;
 		case writeP2:
-			if(P2SCORE == 4)
+			if(P2SCORE == 5)
 				Menu = winP2;
 			else
 				Menu = wait_score;
@@ -127,7 +120,7 @@ void MenuScreen()
 			if(counterwin == 50000)
 			{
 				counterwin = 0;
-				Menu = home;
+				Menu = homeMenu;
 			}
 			else
 				Menu = record_win;
@@ -135,8 +128,7 @@ void MenuScreen()
 	}
 	switch(Menu)
 	{
-		case home:
-			FINISH = 0;
+		case homeMenu:
 			READY = 0;
 			if(WRITE == 0)
 			{
@@ -171,16 +163,12 @@ void MenuScreen()
 			MULTIPLAYER = 0;
 			READY = 0;
 			LCD_DisplayString(1, "    P1 WINS!");
-			write_eeprom_word(&eeprom_array[0], read_eeprom_word(&eeprom_array[0]) + 1);
-			write_eeprom_word(&eeprom_array[3], read_eeprom_word(&eeprom_array[3]) + 1);
 			break;
 		case winP2:
 			SINGLEPLAYER = 0;
 			MULTIPLAYER = 0;
 			READY = 0;
 			LCD_DisplayString(1, "    P2 WINS!");
-			write_eeprom_word(&eeprom_array[0], read_eeprom_word(&eeprom_array[0]) + 1);
-			write_eeprom_word(&eeprom_array[5], read_eeprom_word(&eeprom_array[5]) + 1);
 			break;
 		case record_win:
 			SINGLEPLAYER = 0;
@@ -193,7 +181,7 @@ void MenuScreen()
 }
 
 
-enum UpdateMatrix {waitReady, waitReady2, p1Update, p2Update, ballUpdate} Matrix;
+enum UpdateMatrix {waitReadyP1, waitReadyP2, p1Update, p2Update, ballUpdate} Matrix;
 unsigned char row_movement = 3;
 unsigned char up = 1;
 unsigned short countermatrix = 0;
@@ -201,51 +189,51 @@ void MatrixPlay()
 {
 	switch(Matrix)
 	{
-		case waitReady:
+		case waitReadyP1:
 			if(!READY)
 			{
-				Matrix = waitReady;
+				Matrix = waitReadyP1;
 			}
 			else if(READY)
 				Matrix = p1Update;
 			break;
-		case waitReady2:
+		case waitReadyP2:
 			if(!READY)
 			{
-				Matrix = waitReady2;
+				Matrix = waitReadyP2;
 			}
 			else if(READY)
 				Matrix = p1Update;
 			break;
 		case p1Update:
 			if(!READY)
-				Matrix = waitReady;
+				Matrix = waitReadyP1;
 			else if(READY)
 				Matrix = p2Update;
 			break;
 		case p2Update:
 			if(!READY)
-				Matrix = waitReady;
+				Matrix = waitReadyP1;
 			else if(READY)
 				Matrix = ballUpdate;
 			break;
 		case ballUpdate:
 			if(!READY)
-				Matrix = waitReady;
+				Matrix = waitReadyP1;
 			else if(READY)
 				Matrix = p1Update;
 			break;
 	}
 	switch(Matrix)
 	{
-		case waitReady:
+		case waitReadyP1:
 			countermatrix++;
 			PORTB = P1ROW_MOVEMENT[row_movement];
 			PORTA = 0x7E;
 			P1COL = 0xFE;
 			P2COL = 0x7F;
 			break;
-		case waitReady2:
+		case waitReadyP2:
 			countermatrix++;
 			PORTB = P1ROW_MOVEMENT[row_movement];
 			PORTA = 0x7E;
@@ -834,31 +822,21 @@ int main(void)
 	DDRB = 0xFF; PORTB = 0x00;
 	DDRC = 0xFF; PORTC = 0x00; 
 	DDRD = 0xE0; PORTD = 0x1F; 
+	
 	LCD_init();
 	
 	TimerSet(1);
 	TimerOn();
 	
-	if(read_eeprom_word(&eeprom_array[0]) + '0' == '/')
-		write_eeprom_word(&eeprom_array[0], read_eeprom_word(&eeprom_array[0]) + 1);
-	if(read_eeprom_word(&eeprom_array[5]) + '0' == '/')
-		write_eeprom_word(&eeprom_array[5], read_eeprom_word(&eeprom_array[5]) + 1);
-	if(read_eeprom_word(&eeprom_array[3]) + '0' == '/')
-		write_eeprom_word(&eeprom_array[3], read_eeprom_word(&eeprom_array[3]) + 1);
-
 	while(1)
     {
-		
 		tmpD = PIND;
 		tmpD = ~tmpD;
-		
 		MenuScreen();
 		MatrixPlay();
 		MoveP1();
 		MoveP2();
 		MoveP2bot();
 		BallPlay();
-	
-
     }
 }
