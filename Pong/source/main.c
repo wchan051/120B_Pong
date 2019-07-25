@@ -25,11 +25,11 @@ unsigned char P1BOOL = 0;
 unsigned char P2BOOL = 0; 
 
 unsigned char P1ROW_MOVEMENT[6] = {0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0};
-unsigned char P1index = 4;
+unsigned char P1INDEX = 4;
 unsigned char P1COL = 0xFE;
 
 unsigned char P2ROW_MOVEMENT[6] = {0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0};
-unsigned char P2index = 4;
+unsigned char P2INDEX = 4;
 unsigned char P2COL = 0x7F;
 
 unsigned char BALLROW_MOVEMENT[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
@@ -193,309 +193,308 @@ void MenuScreen()
 }
 
 
-enum MatrixUpdate {wait_Ready, wait_Ready2, updateP1, updateP2, updateBall} Matrix;
-unsigned char a = 3;
-
+enum UpdateMatrix {waitReady, waitReady2, p1Update, p2Update, ballUpdate} Matrix;
+unsigned char row_movement = 3;
 unsigned char up = 1;
 unsigned short countermatrix = 0;
 void MatrixPlay()
 {
 	switch(Matrix)
 	{
-		case wait_Ready:
+		case waitReady:
 			if(!READY)
 			{
-				Matrix = wait_Ready;
+				Matrix = waitReady;
 			}
 			else if(READY)
-				Matrix = updateP1;
+				Matrix = p1Update;
 			break;
-		case wait_Ready2:
+		case waitReady2:
 			if(!READY)
 			{
-				Matrix = wait_Ready2;
+				Matrix = waitReady2;
 			}
 			else if(READY)
-				Matrix = updateP1;
+				Matrix = p1Update;
 			break;
-		case updateP1:
+		case p1Update:
 			if(!READY)
-				Matrix = wait_Ready;
+				Matrix = waitReady;
 			else if(READY)
-				Matrix = updateP2;
+				Matrix = p2Update;
 			break;
-		case updateP2:
+		case p2Update:
 			if(!READY)
-				Matrix = wait_Ready;
+				Matrix = waitReady;
 			else if(READY)
-				Matrix = updateBall;
+				Matrix = ballUpdate;
 			break;
-		case updateBall:
+		case ballUpdate:
 			if(!READY)
-				Matrix = wait_Ready;
+				Matrix = waitReady;
 			else if(READY)
-				Matrix = updateP1;
+				Matrix = p1Update;
 			break;
 	}
 	switch(Matrix)
 	{
-		case wait_Ready:
+		case waitReady:
 			countermatrix++;
-			PORTB = P1ROW_MOVEMENT[a];
+			PORTB = P1ROW_MOVEMENT[row_movement];
 			PORTA = 0x7E;
 			P1COL = 0xFE;
 			P2COL = 0x7F;
 			break;
-		case wait_Ready2:
+		case waitReady2:
 			countermatrix++;
-			PORTB = P1ROW_MOVEMENT[a];
+			PORTB = P1ROW_MOVEMENT[row_movement];
 			PORTA = 0x7E;
 			P1COL = 0xFE;
 			P2COL = 0x7F;
 		break;
-		case updateP1:
-			PORTB = P1ROW_MOVEMENT[P1index];
+		case p1Update:
+			PORTB = P1ROW_MOVEMENT[P1INDEX];
 			PORTA = P1COL;
 			break;
-		case updateP2:
-			PORTB = P2ROW_MOVEMENT[P2index];
+		case p2Update:
+			PORTB = P2ROW_MOVEMENT[P2INDEX];
 			PORTA = P2COL;
 			break;
-		case updateBall:
+		case ballUpdate:
 			PORTB = BALLROW_MOVEMENT[BRindex];
 			PORTA = BALLCOL_MOVEMENT[BCindex];
 			break;	
 	}
 }
 
-enum Movement_P1 {wait_Ready_p1, move_p1, up_p1, down_p1, holdp1} MovementP1;
-unsigned short counter1 = 0;
+enum P1Movement {p1_wait, p1_move, p1_up, p1_down, p1_stop} P1Movement;
+unsigned short counterp1 = 0;
 void MoveP1()
 {
-	switch(MovementP1)
+	switch(P1Movement)
 	{
-		case wait_Ready_p1:
+		case p1_wait:
 			if(!READY)
-				MovementP1 = wait_Ready_p1;
+				P1Movement = p1_wait;
 			else if (READY)
-				MovementP1 = move_p1;
+				P1Movement = p1_move;
 			break;
-		case move_p1:
+		case p1_move:
 			if(READY)
 			{
 				if((!(tmpD & 0x01) && !(tmpD & 0x02)) || ((tmpD & 0x01) && (tmpD & 0x02)))
-					MovementP1 = move_p1;
+					P1Movement = p1_move;
 				else if(tmpD & 0x01)
-					MovementP1 = up_p1;
+					P1Movement = p1_up;
 				else if(tmpD & 0x02)
-					MovementP1 = down_p1;
+					P1Movement = p1_down;
 			}
 			else
-				MovementP1 = wait_Ready_p1;
+				P1Movement = p1_wait;
 			break;
-		case up_p1:
-			MovementP1 = holdp1;
+		case p1_up:
+			P1Movement = p1_stop;
 			break;
-		case down_p1:
-			MovementP1 = holdp1;
+		case p1_down:
+			P1Movement = p1_stop;
 			break;
-		case holdp1:
-			if(counter1 == 2500)
-				MovementP1 = move_p1;
+		case p1_stop:
+			if(counterp1 == 2500)
+				P1Movement = p1_move;
 			else
-				MovementP1 = holdp1;
+				P1Movement = p1_stop;
 			break;
 	}	
-	switch(MovementP1)
+	switch(P1Movement)
 	{
-		case wait_Ready_p1:
-			counter1 = 0;
+		case p1_wait:
+			counterp1 = 0;
 			break;
-		case move_p1:
-			counter1 = 0;
+		case p1_move:
+			counterp1 = 0;
 			break;
-		case up_p1:
-			if(P1index < 5)
-				P1index++;
+		case p1_up:
+			if(P1INDEX < 5)
+				P1INDEX++;
 			else
-				P1index = P1index;
+				P1INDEX = P1INDEX;
 			break;
-		case down_p1:
-			if(P1index > 0)
-				P1index--;
+		case p1_down:
+			if(P1INDEX > 0)
+				P1INDEX--;
 			else
-				P1index = P1index;
+				P1INDEX = P1INDEX;
 			break;
-		case holdp1:
-			counter1++;
+		case p1_stop:
+			counterp1++;
 			break;
 	}
 }
 
-enum Movement_P2 {wait_Ready_p2, move_p2, up_p2, down_p2, holdp2} MovementP2;
-unsigned short counter2 = 0;
+enum P2_Movement {p2_wait, p2_move, p2_up, p2_down, p2_stop} P2Movement;
+unsigned short counterp2 = 0;
 void MoveP2()
 {
-	switch(MovementP2)
+	switch(P2Movement)
 	{
-		case wait_Ready_p2:
+		case p2_wait:
 			if(!READY && !MULTIPLAYER)
-				MovementP2 = wait_Ready_p2;
+				P2Movement = p2_wait;
 			else if (READY && MULTIPLAYER && !SINGLEPLAYER)
-				MovementP2 = move_p2;
+				P2Movement = p2_move;
 			else
-				MovementP2 = wait_Ready_p2;
+				P2Movement = p2_wait;
 			break;
-		case move_p2:
+		case p2_move:
 			if(!READY)
-				MovementP2 = wait_Ready_p2;
+				P2Movement = p2_wait;
 			else if(READY && MULTIPLAYER)
 			{
 				if((!(tmpD & 0x04) && !(tmpD & 0x08)) || ((tmpD & 0x04) && (tmpD & 0x08)))
-					MovementP2 = move_p2;
+					P2Movement = p2_move;
 				else if(tmpD & 0x04)
-					MovementP2 = up_p2;
+					P2Movement = p2_up;
 				else if(tmpD & 0x08)
-					MovementP2 = down_p2;
+					P2Movement = p2_down;
 			}
 			break;
-		case up_p2:
-			MovementP2 = holdp2;
+		case p2_up:
+			P2Movement = p2_stop;
 			break;
-		case down_p2:
-			MovementP2 = holdp2;
+		case p2_down:
+			P2Movement = p2_stop;
 			break;
-		case holdp2:
-			if(counter2 == 2500)
-				MovementP2 = move_p2;
+		case p2_stop:
+			if(counterp2 == 2500)
+				P2Movement = p2_move;
 			else
-				MovementP2 = holdp2;
+				P2Movement = p2_stop;
 			break;
 	}
-	switch(MovementP2)
+	switch(P2Movement)
 	{
-		case wait_Ready_p2:
-			counter2 = 0;
+		case p2_wait:
+			counterp2 = 0;
 			break;
-		case move_p2:
-			counter2 = 0;
+		case p2_move:
+			counterp2 = 0;
 			break;
-		case up_p2:
-			if(P2index < 5)
-				P2index++;
+		case p2_up:
+			if(P2INDEX < 5)
+				P2INDEX++;
 			else
-				P2index = P2index;
+				P2INDEX = P2INDEX;
 			break;
-		case down_p2:
-			if(P2index > 0)
-				P2index--;
+		case p2_down:
+			if(P2INDEX > 0)
+				P2INDEX--;
 			else
-				P2index = P2index;
+				P2INDEX = P2INDEX;
 			break;
-		case holdp2:
-			counter2++;
+		case p2_stop:
+			counterp2++;
 			break;
 	}
 }
 
-enum Movement_P2BOT {wait_Ready_p2bot, move_p2bot, up_p2bot, down_p2bot, holdp2bot} MovementP2bot;
-unsigned short counter2bot = 0;
+enum P2Bot_Movement {p2bot_wait, p2bot_move, p2bot_up, p2bot_down, p2bot_stop} P2BotMovement;
+unsigned short counterp2bot = 0;
 void MoveP2bot()
 {
-	switch(MovementP2bot)
+	switch(P2BotMovement)
 	{
-		case wait_Ready_p2bot:
+		case p2bot_wait:
 			if(!READY && !SINGLEPLAYER)
-				MovementP2bot = wait_Ready_p2bot;
+				P2BotMovement = p2bot_wait;
 			else if (READY && SINGLEPLAYER && !MULTIPLAYER)
-				MovementP2bot = move_p2bot;
+				P2BotMovement = p2bot_move;
 			else
-				MovementP2bot = wait_Ready_p2bot;
+				P2BotMovement = p2bot_wait;
 			break;
-		case move_p2bot:
+		case p2bot_move:
 			if(!READY)
-				MovementP2 = wait_Ready_p2bot;
+				P2BotMovement = p2bot_wait;
 			else if(READY && SINGLEPLAYER)
 			{
-				if((BRindex < P2index))
-					MovementP2bot = down_p2bot;
-				else if((BRindex > P2index))
-					MovementP2bot = up_p2bot;
+				if((BRindex < P2INDEX))
+					P2BotMovement = p2bot_down;
+				else if((BRindex > P2INDEX))
+					P2BotMovement = p2bot_up;
 				else
-					MovementP2bot = move_p2bot;	
+					P2BotMovement = p2bot_move;	
 			}
 			break;
-		case up_p2bot:
-			MovementP2bot = holdp2bot;
+		case p2bot_up:
+			P2BotMovement = p2bot_stop;
 			break;
-		case down_p2bot:
-			MovementP2bot = holdp2bot;
+		case p2bot_down:
+			P2BotMovement = p2bot_stop;
 			break;
-		case holdp2bot:
-			if(counter2bot == 3000)
-				MovementP2bot = move_p2bot;
+		case p2bot_stop:
+			if(counterp2bot == 3000)
+				P2BotMovement = p2bot_move;
 			else
-				MovementP2bot = holdp2bot;
+				P2BotMovement = p2bot_stop;
 			break;
 	}
-	switch(MovementP2bot)
+	switch(P2BotMovement)
 	{
-		case wait_Ready_p2bot:
-			counter2bot = 0;
+		case p2bot_wait:
+			counterp2bot = 0;
 			break;
-		case move_p2bot:
-			counter2bot = 0;
+		case p2bot_move:
+			counterp2bot = 0;
 			break;
-		case up_p2bot:
-			if(P2index < 5)
-				P2index++;
+		case p2bot_up:
+			if(P2INDEX < 5)
+				P2INDEX++;
 			else
-				P2index = P2index;
+				P2INDEX = P2INDEX;
 			break;
-		case down_p2bot:
-			if(P2index > 0)
-				P2index--;
+		case p2bot_down:
+			if(P2INDEX > 0)
+				P2INDEX--;
 			else
-				P2index = P2index;
+				P2INDEX = P2INDEX;
 			break;
-		case holdp2bot:
-			counter2bot++;
+		case p2bot_stop:
+			counterp2bot++;
 			break;
 	}
 }
 
-enum BallMoves {wait_ball, start, start_wait, move_ball, holdball} BallMove;
-unsigned short counterball = 0;
-unsigned short counterstart = 0;
+enum BallMoves {wait_ball, start, start_wait, move_ball, stop_ball} BallMove;
+unsigned short ballcounter = 0;
+unsigned short startcounter = 0;
 char hit = -1;
 char wall = -1;
 void BallPlay()
 {
 	switch(BallMove)
 	{
-		case wait_Ready_ball:
+		case wait_ball:
 			if(!READY)
-				BallMove = wait_Ready_ball;
+				BallMove = wait_ball;
 			else if(READY)
 				BallMove = start;
 			break;
 		case start:
 			if(!READY)
-				BallMove = wait_Ready_ball;
+				BallMove = wait_ball;
 			else
 				BallMove = start_wait;
 			break;
 		case start_wait:
-			if(counterstart != 10000)
+			if(startcounter != 10000)
 				BallMove = start_wait;
-			else if(counterstart == 10000)
+			else if(startcounter == 10000)
 			{
-				counterstart = 0;
+				startcounter = 0;
 				BallMove = move_ball;
 			}	
 			break;
 		case move_ball:
-			counterstart = 0;
+			startcounter = 0;
 			if(BCindex == 0)
 			{
 				P2BOOL = 1;
@@ -507,14 +506,14 @@ void BallPlay()
 				BallMove = start;
 			}
 			else
-				BallMove = holdball;
+				BallMove = stop_ball;
 			break;
-		case holdball:
-			if(counterball != (4000))
-				BallMove = holdball;
+		case stop_ball:
+			if(ballcounter != (4000))
+				BallMove = stop_ball;
 			else
 			{
-				counterball = 0;
+				ballcounter = 0;
 				if(P1BOOL)
 					BallMove = start;
 				else if(P2BOOL)
@@ -526,7 +525,7 @@ void BallPlay()
 	}	
 	switch(BallMove)
 	{
-		case wait_Ready_ball:
+		case wait_ball:
 			P1BOOL = 0;
 			P2BOOL = 0;
 			break;
@@ -537,8 +536,8 @@ void BallPlay()
 				wall = 0;
 				BRindex = 4;
 				BCindex = 4;
-				P1index = 3;
-				P2index = 3;
+				P1INDEX = 3;
+				P2INDEX = 3;
 				P1BOOL = 0;
 				P2BOOL = 0;
 			}
@@ -548,8 +547,8 @@ void BallPlay()
 				wall = 0;
 				BRindex = 4;
 				BCindex = 2;
-				P1index = 3;
-				P2index = 3;
+				P1INDEX = 3;
+				P2INDEX = 3;
 				P1SCORE++;
 			}
 			else if(P2BOOL)
@@ -558,18 +557,18 @@ void BallPlay()
 				wall = 0;
 				BRindex = 4;
 				BCindex = 5;
-				P1index = 3;
-				P2index = 3;
+				P1INDEX = 3;
+				P2INDEX = 3;
 				P2SCORE++;
 			}
 			break;
 		case start_wait:
 			P1BOOL = 0;
 			P2BOOL = 0;
-			counterstart++;
+			startcounter++;
 			break;
 		case move_ball:
-			counterstart = 0;
+			startcounter = 0;
 			BRindex = BRindex + wall;
 			BCindex = BCindex + hit;
 			
@@ -580,7 +579,7 @@ void BallPlay()
 			{	
 				if(BRindex == 0)
 				{
-					if(P1index == 0)
+					if(P1INDEX == 0)
 					{
 						hit = 1;
 						wall = 1;
@@ -588,12 +587,12 @@ void BallPlay()
 				}
 				else if(BRindex == 1)
 				{
-					if(P1index == 0)
+					if(P1INDEX == 0)
 					{
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1index == 1)
+					else if(P1INDEX == 1)
 					{
 						hit = 1;
 						wall = -1;
@@ -601,17 +600,17 @@ void BallPlay()
 				}
 				else if(BRindex == 2)
 				{
-					if(P1index == 0)
+					if(P1INDEX == 0)
 					{
 						hit = 1;
 						wall = 1;
 					}
-					else if(P1index == 1)
+					else if(P1INDEX == 1)
 					{
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1index == 2)
+					else if(P1INDEX == 2)
 					{
 						hit = 1;
 						wall = -1;
@@ -619,17 +618,17 @@ void BallPlay()
 				}
 				else if(BRindex == 3)
 				{
-					if(P1index == 1)
+					if(P1INDEX == 1)
 					{
 						hit = 1;
 						wall = 1;
 					}
-					else if(P1index == 2)
+					else if(P1INDEX == 2)
 					{
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1index == 3)
+					else if(P1INDEX == 3)
 					{
 						hit = 1;
 						wall = -1;
@@ -637,17 +636,17 @@ void BallPlay()
 				}
 				else if(BRindex == 4)
 				{
-					if(P1index == 2)
+					if(P1INDEX == 2)
 					{
 						hit = 1;
 						wall = 1;
 					}
-					else if(P1index == 3)
+					else if(P1INDEX == 3)
 					{
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1index == 4)
+					else if(P1INDEX == 4)
 					{
 						hit = 1;
 						wall = -1;
@@ -655,17 +654,17 @@ void BallPlay()
 				}
 				else if(BRindex == 5)
 				{
-					if(P1index == 3)
+					if(P1INDEX == 3)
 					{
 						hit = 1;
 						wall = 1;
 					}
-					else if(P1index == 4)
+					else if(P1INDEX == 4)
 					{
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1index == 5)
+					else if(P1INDEX == 5)
 					{
 						hit = 1;
 						wall = -1;
@@ -673,12 +672,12 @@ void BallPlay()
 				}
 				else if(BRindex == 6)
 				{
-					if(P1index == 4)
+					if(P1INDEX == 4)
 					{
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1index == 5)
+					else if(P1INDEX == 5)
 					{
 						hit = 1;
 						wall = -1;
@@ -686,7 +685,7 @@ void BallPlay()
 				}
 				else if(BRindex == 7)
 				{
-					if(P1index == 5)
+					if(P1INDEX == 5)
 					{
 						hit = 1;
 						wall = -1;
@@ -704,7 +703,7 @@ void BallPlay()
 			{
 				if(BRindex == 0)
 				{
-					if(P2index == 0)
+					if(P2INDEX == 0)
 					{
 						hit = -1;
 						wall = -1;
@@ -712,12 +711,12 @@ void BallPlay()
 				}
 				else if(BRindex == 1)
 				{
-					if(P2index == 0)
+					if(P2INDEX == 0)
 					{
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2index == 1)
+					else if(P2INDEX == 1)
 					{
 						hit = -1;
 						wall = -1;
@@ -725,17 +724,17 @@ void BallPlay()
 				}
 				else if(BRindex == 2)
 				{
-					if(P2index == 0)
+					if(P2INDEX == 0)
 					{
 						hit = -1;
 						wall = 1;
 					}
-					else if(P2index == 1)
+					else if(P2INDEX == 1)
 					{
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2index == 2)
+					else if(P2INDEX == 2)
 					{
 						hit = -1;
 						wall = -1;
@@ -743,17 +742,17 @@ void BallPlay()
 				}
 				else if(BRindex == 3)
 				{
-					if(P2index == 1)
+					if(P2INDEX == 1)
 					{
 						hit = -1;
 						wall = 1;
 					}
-					else if(P2index == 2)
+					else if(P2INDEX == 2)
 					{
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2index == 3)
+					else if(P2INDEX == 3)
 					{
 						hit = -1;
 						wall = -1;
@@ -761,17 +760,17 @@ void BallPlay()
 				}
 				else if(BRindex == 4)
 				{
-					if(P2index == 2)
+					if(P2INDEX == 2)
 					{
 						hit = -1;
 						wall = 1;
 					}
-					else if(P2index == 3)
+					else if(P2INDEX == 3)
 					{
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2index == 4)
+					else if(P2INDEX == 4)
 					{
 						hit = -1;
 						wall = -1;
@@ -779,17 +778,17 @@ void BallPlay()
 				}
 				else if(BRindex == 5)
 				{
-					if(P2index == 3)
+					if(P2INDEX == 3)
 					{
 						hit = -1;
 						wall = 1;
 					}
-					else if(P2index == 4)
+					else if(P2INDEX == 4)
 					{
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2index == 5)
+					else if(P2INDEX == 5)
 					{
 						hit = -1;
 						wall = -1;
@@ -797,12 +796,12 @@ void BallPlay()
 				}
 				else if(BRindex == 6)
 				{
-					if(P2index == 4)
+					if(P2INDEX == 4)
 					{
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2index == 5)
+					else if(P2INDEX == 5)
 					{
 						hit = -1;
 						wall = -1;
@@ -810,7 +809,7 @@ void BallPlay()
 				}
 				else if(BRindex == 7)
 				{
-					if(P2index == 5)
+					if(P2INDEX == 5)
 					{
 						hit = -1;
 						wall = -1;
@@ -822,8 +821,8 @@ void BallPlay()
 				}
 			}
 			break;
-		case holdball:
-			counterball++;
+		case stop_ball:
+			ballcounter++;
 			break;
 	}
 }
