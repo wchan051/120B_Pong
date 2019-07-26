@@ -12,57 +12,44 @@
 #include "io.h"
 
 unsigned char READY = 0;
-unsigned char WRITE = 0;
-unsigned char SINGLEPLAYER = 0;
-unsigned char MULTIPLAYER = 0;
-
-
-unsigned char P1SCORE = 0; 
-unsigned char P2SCORE = 0; 
-unsigned char P1BOOL = 0; 
-unsigned char P2BOOL = 0; 
-
-unsigned char P1ROW_MOVEMENT[6] = {0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0};
+unsigned char START = 0;
+unsigned char p1score = 0; 
+unsigned char p2score = 0; 
+unsigned char p1bool = 0; 
+unsigned char p2bool = 0; 
+unsigned char p1_row_movement[6] = {0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0};
 unsigned char P1INDEX = 4;
 unsigned char P1COL = 0xFE;
-
-unsigned char P2ROW_MOVEMENT[6] = {0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0};
+unsigned char p2_row_movement[6] = {0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0};
 unsigned char P2INDEX = 4;
 unsigned char P2COL = 0x7F;
+unsigned char ballrow_movement[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+unsigned char ballcol_movement[8] = {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F};
+unsigned char ball_row_index = 3;
+unsigned char ball_col_index = 3;
 
-unsigned char BALLROW_MOVEMENT[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-unsigned char BALLCOL_MOVEMENT[8] = {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F};
-unsigned char BRindex = 3;
-unsigned char BCindex = 3;
-
-enum Menus {homeMenu, wait, play, wait_score, writeP1, writeP2, winP1, winP2, record_win} Menu;
-unsigned short counterwin = 0;
+enum Game_setup {wait_ready, wait, play, wait_score, writeP1, writeP2, winP1, winP2} Game;
+unsigned short wincount = 0;
 unsigned char tmpD;
 
-void MenuScreen()
+unsigned char screenStablizer = 0;
+
+void ReadyScreen()
 {
-	switch(Menu)
+	switch(Game)
 	{
-		case homeMenu:
+		case wait_ready:
 			if((tmpD & 0x1F) == 0x00)
 			{
-				SINGLEPLAYER = 0;
-				MULTIPLAYER = 0;
-				P1SCORE = 0;
-				P2SCORE = 0;
-				Menu = homeMenu;
+				START = 0;
+				p1score = 0;
+				p2score = 0;
+				Game = wait_ready;
 			}
 			else if((tmpD & 0x1F) == 0x01)
 			{
-				SINGLEPLAYER = 1;
-				MULTIPLAYER = 0;
-				Menu = wait;
-			}
-			else if((tmpD & 0x1F) == 0x02)
-			{
-				SINGLEPLAYER = 0;
-				MULTIPLAYER = 1;
-				Menu = wait;
+				START = 1;
+				Game = wait;
 			}
 			break;
 		case wait:
@@ -70,191 +57,161 @@ void MenuScreen()
 			{
 				if((tmpD & 0x1F) == 0x01)
 				{
-					SINGLEPLAYER = 1;
-					MULTIPLAYER = 0;
+					START = 1;
 				}
-				else if((tmpD & 0x1F) == 0x02)
-				{
-					SINGLEPLAYER = 0;
-					MULTIPLAYER = 1;
-				}
-					
-				Menu= wait;
+				Game= wait;
 			}
 			else
-				Menu = play;
+				Game = play;
 			break;
 		case play:
-			Menu = wait_score;
+			Game = wait_score;
 			break;
 		case wait_score:
-			if(!P1BOOL && !P2BOOL)
-				Menu = wait_score;
-			else if(P1BOOL)
-				Menu = writeP1;
-			else if(P2BOOL)
-				Menu = writeP2;
+			if(!p1bool && !p2bool)
+				Game = wait_score;
+			else if(p1bool)
+				Game = writeP1;
+			else if(p2bool)
+				Game = writeP2;
 			break;
 		case writeP1:
-			if(P1SCORE == 5) 
-				Menu = winP1;
+			if(p1score == 5) 
+				Game = winP2;
 			else
-				Menu = wait_score;
+				Game = wait_score;
 			break;
 		case writeP2:
-			if(P2SCORE == 5)
-				Menu = winP2;
+			if(p2score == 5)
+				Game = winP1;
 			else
-				Menu = wait_score;
+				Game = wait_score;
 			break;
 		case winP1:
-			Menu = record_win;
+			Game = wait_ready;
 			break;
 		case winP2:
-			Menu = record_win;
-			break;
-		case record_win:
-			SINGLEPLAYER = 0;
-			MULTIPLAYER = 0;
-			if(counterwin == 50000)
-			{
-				counterwin = 0;
-				Menu = homeMenu;
-			}
-			else
-				Menu = record_win;
+			Game = wait_ready;
 			break;
 	}
-	switch(Menu)
+	switch(Game)
 	{
-		case homeMenu:
+		case wait_ready:
 			READY = 0;
-			if(WRITE == 0)
-			{
+			if(screenStablizer == 0) {
 				LCD_ClearScreen();
-				LCD_DisplayString(1, "B1) SINGLEPLAYERB2) MULTIPLAYER");
-				WRITE = 1;
+				LCD_DisplayString(1, "Right Button to Start Pong PvP");
+				screenStablizer = 1;
 			}
 			break;
 		case wait:
-			WRITE = 0;
+			screenStablizer = 0;
 			break;
 		case play:
 			READY = 1;
-			if(WRITE == 0)
-			{
+			if(screenStablizer == 0) {
 				LCD_DisplayString(1, "Score:          P1)        P2)");
-				WRITE = 1;
+				screenStablizer = 1;
 			}
 			break;
 		case wait_score:
 			break;
 		case writeP1:
-			LCD_Cursor(20);
-			LCD_WriteData(P1SCORE + '0');
+			LCD_Cursor(31);
+			LCD_WriteData(p1score + '0');
 			break;
 		case writeP2:
-			LCD_Cursor(31);
-			LCD_WriteData(P2SCORE + '0');
+			LCD_Cursor(20);
+			LCD_WriteData(p2score + '0');
 			break;
 		case winP1:
-			SINGLEPLAYER = 0;
-			MULTIPLAYER = 0;
+			START = 0;
 			READY = 0;
 			LCD_DisplayString(1, "    P1 WINS!");
 			break;
 		case winP2:
-			SINGLEPLAYER = 0;
-			MULTIPLAYER = 0;
+			START = 0;
 			READY = 0;
 			LCD_DisplayString(1, "    P2 WINS!");
-			break;
-		case record_win:
-			SINGLEPLAYER = 0;
-			MULTIPLAYER = 0;
-			READY = 0;
-			counterwin++;
-			WRITE = 0;
 			break;
 	}	
 }
 
 
-enum UpdateMatrix {waitReadyP1, waitReadyP2, p1Update, p2Update, ballUpdate} Matrix;
+enum Update {waitReadyP1, waitReadyP2, p1Update, p2Update, ballUpdate} LED;
 unsigned char row_movement = 3;
-unsigned char up = 1;
 unsigned short countermatrix = 0;
-void MatrixPlay()
+void LED_Movement()
 {
-	switch(Matrix)
+	switch(LED)
 	{
 		case waitReadyP1:
 			if(!READY)
 			{
-				Matrix = waitReadyP1;
+				LED = waitReadyP1;
 			}
 			else if(READY)
-				Matrix = p1Update;
+				LED = p1Update;
 			break;
 		case waitReadyP2:
 			if(!READY)
 			{
-				Matrix = waitReadyP2;
+				LED = waitReadyP2;
 			}
 			else if(READY)
-				Matrix = p1Update;
+				LED = p1Update;
 			break;
 		case p1Update:
 			if(!READY)
-				Matrix = waitReadyP1;
+				LED = waitReadyP1;
 			else if(READY)
-				Matrix = p2Update;
+				LED = p2Update;
 			break;
 		case p2Update:
 			if(!READY)
-				Matrix = waitReadyP1;
+				LED = waitReadyP1;
 			else if(READY)
-				Matrix = ballUpdate;
+				LED = ballUpdate;
 			break;
 		case ballUpdate:
 			if(!READY)
-				Matrix = waitReadyP1;
+				LED = waitReadyP1;
 			else if(READY)
-				Matrix = p1Update;
+				LED = p1Update;
 			break;
 	}
-	switch(Matrix)
+	switch(LED)
 	{
 		case waitReadyP1:
 			countermatrix++;
-			PORTB = P1ROW_MOVEMENT[row_movement];
+			PORTB = p1_row_movement[row_movement];
 			PORTA = 0x7E;
 			P1COL = 0xFE;
 			P2COL = 0x7F;
 			break;
 		case waitReadyP2:
 			countermatrix++;
-			PORTB = P1ROW_MOVEMENT[row_movement];
+			PORTB = p1_row_movement[row_movement];
 			PORTA = 0x7E;
 			P1COL = 0xFE;
 			P2COL = 0x7F;
 		break;
 		case p1Update:
-			PORTB = P1ROW_MOVEMENT[P1INDEX];
+			PORTB = p1_row_movement[P1INDEX];
 			PORTA = P1COL;
 			break;
 		case p2Update:
-			PORTB = P2ROW_MOVEMENT[P2INDEX];
+			PORTB = p2_row_movement[P2INDEX];
 			PORTA = P2COL;
 			break;
 		case ballUpdate:
-			PORTB = BALLROW_MOVEMENT[BRindex];
-			PORTA = BALLCOL_MOVEMENT[BCindex];
+			PORTB = ballrow_movement[ball_row_index];
+			PORTA = ballcol_movement[ball_col_index];
 			break;	
 	}
 }
 
-enum P1Movement {p1_wait, p1_move, p1_up, p1_down, p1_stop} P1Movement;
+enum P1_Movement {p1_wait, p1_move, p1_up, p1_down, p1_stop} P1Movement;
 unsigned short counterp1 = 0;
 void MoveP1()
 {
@@ -314,7 +271,7 @@ void MoveP1()
 			break;
 		case p1_stop:
 			counterp1++;
-			break;
+			break; 
 	}
 }
 
@@ -325,9 +282,9 @@ void MoveP2()
 	switch(P2Movement)
 	{
 		case p2_wait:
-			if(!READY && !MULTIPLAYER)
+			if(!READY && !START)
 				P2Movement = p2_wait;
-			else if (READY && MULTIPLAYER && !SINGLEPLAYER)
+			else if (READY && START)
 				P2Movement = p2_move;
 			else
 				P2Movement = p2_wait;
@@ -335,7 +292,7 @@ void MoveP2()
 		case p2_move:
 			if(!READY)
 				P2Movement = p2_wait;
-			else if(READY && MULTIPLAYER)
+			else if(READY && START)
 			{
 				if((!(tmpD & 0x04) && !(tmpD & 0x08)) || ((tmpD & 0x04) && (tmpD & 0x08)))
 					P2Movement = p2_move;
@@ -384,187 +341,121 @@ void MoveP2()
 	}
 }
 
-enum P2Bot_Movement {p2bot_wait, p2bot_move, p2bot_up, p2bot_down, p2bot_stop} P2BotMovement;
-unsigned short counterp2bot = 0;
-void MoveP2bot()
-{
-	switch(P2BotMovement)
-	{
-		case p2bot_wait:
-			if(!READY && !SINGLEPLAYER)
-				P2BotMovement = p2bot_wait;
-			else if (READY && SINGLEPLAYER && !MULTIPLAYER)
-				P2BotMovement = p2bot_move;
-			else
-				P2BotMovement = p2bot_wait;
-			break;
-		case p2bot_move:
-			if(!READY)
-				P2BotMovement = p2bot_wait;
-			else if(READY && SINGLEPLAYER)
-			{
-				if((BRindex < P2INDEX))
-					P2BotMovement = p2bot_down;
-				else if((BRindex > P2INDEX))
-					P2BotMovement = p2bot_up;
-				else
-					P2BotMovement = p2bot_move;	
-			}
-			break;
-		case p2bot_up:
-			P2BotMovement = p2bot_stop;
-			break;
-		case p2bot_down:
-			P2BotMovement = p2bot_stop;
-			break;
-		case p2bot_stop:
-			if(counterp2bot == 3000)
-				P2BotMovement = p2bot_move;
-			else
-				P2BotMovement = p2bot_stop;
-			break;
-	}
-	switch(P2BotMovement)
-	{
-		case p2bot_wait:
-			counterp2bot = 0;
-			break;
-		case p2bot_move:
-			counterp2bot = 0;
-			break;
-		case p2bot_up:
-			if(P2INDEX < 5)
-				P2INDEX++;
-			else
-				P2INDEX = P2INDEX;
-			break;
-		case p2bot_down:
-			if(P2INDEX > 0)
-				P2INDEX--;
-			else
-				P2INDEX = P2INDEX;
-			break;
-		case p2bot_stop:
-			counterp2bot++;
-			break;
-	}
-}
-
-enum BallMoves {wait_ball, start, start_wait, move_ball, stop_ball} BallMove;
+enum BallMovement {wait_ball, start, start_wait, move_ball, stop_ball} Ball;
 unsigned short ballcounter = 0;
 unsigned short startcounter = 0;
 char hit = -1;
 char wall = -1;
-void BallPlay()
+void MoveBall()
 {
-	switch(BallMove)
+	switch(Ball)
 	{
 		case wait_ball:
 			if(!READY)
-				BallMove = wait_ball;
+				Ball = wait_ball;
 			else if(READY)
-				BallMove = start;
+				Ball = start;
 			break;
 		case start:
 			if(!READY)
-				BallMove = wait_ball;
+				Ball = wait_ball;
 			else
-				BallMove = start_wait;
+				Ball = start_wait;
 			break;
 		case start_wait:
 			if(startcounter != 10000)
-				BallMove = start_wait;
+				Ball = start_wait;
 			else if(startcounter == 10000)
 			{
 				startcounter = 0;
-				BallMove = move_ball;
+				Ball = move_ball;
 			}	
 			break;
 		case move_ball:
 			startcounter = 0;
-			if(BCindex == 0)
+			if(ball_col_index == 0)
 			{
-				P2BOOL = 1;
-				BallMove = start;
+				p2bool = 1;
+				Ball = start;
 			}
-			else if(BCindex == 7)
+			else if(ball_col_index == 7)
 			{
-				P1BOOL = 1;
-				BallMove = start;
+				p1bool = 1;
+				Ball = start;
 			}
 			else
-				BallMove = stop_ball;
+				Ball = stop_ball;
 			break;
 		case stop_ball:
 			if(ballcounter != (4000))
-				BallMove = stop_ball;
+				Ball = stop_ball;
 			else
 			{
 				ballcounter = 0;
-				if(P1BOOL)
-					BallMove = start;
-				else if(P2BOOL)
-					BallMove = start;
+				if(p1bool)
+					Ball = start;
+				else if(p2bool)
+					Ball = start;
 				else
-					BallMove = move_ball;
+					Ball = move_ball;
 			}
 			break;
 	}	
-	switch(BallMove)
+	switch(Ball)
 	{
 		case wait_ball:
-			P1BOOL = 0;
-			P2BOOL = 0;
+			p1bool = 0;
+			p2bool = 0;
 			break;
 		case start:
-			if(!P1BOOL && !P2BOOL)
+			if(!p1bool && !p2bool)
 			{
 				hit = -1;
 				wall = 0;
-				BRindex = 4;
-				BCindex = 4;
+				ball_row_index = 4;
+				ball_col_index = 4;
 				P1INDEX = 3;
 				P2INDEX = 3;
-				P1BOOL = 0;
-				P2BOOL = 0;
+				p1bool = 0;
+				p2bool = 0;
 			}
-			else if(P1BOOL)
+			else if(p1bool)
 			{
 				hit = 1;
 				wall = 0;
-				BRindex = 4;
-				BCindex = 2;
+				ball_row_index = 4;
+				ball_col_index = 2;
 				P1INDEX = 3;
 				P2INDEX = 3;
-				P1SCORE++;
+				p1score++;
 			}
-			else if(P2BOOL)
+			else if(p2bool)
 			{
 				hit = -1;
 				wall = 0;
-				BRindex = 4;
-				BCindex = 5;
+				ball_row_index = 4;
+				ball_col_index = 5;
 				P1INDEX = 3;
 				P2INDEX = 3;
-				P2SCORE++;
+				p2score++;
 			}
 			break;
 		case start_wait:
-			P1BOOL = 0;
-			P2BOOL = 0;
+			p1bool = 0;
+			p2bool = 0;
 			startcounter++;
 			break;
 		case move_ball:
 			startcounter = 0;
-			BRindex = BRindex + wall;
-			BCindex = BCindex + hit;
+			ball_row_index = ball_row_index + wall;
+			ball_col_index = ball_col_index + hit;
 			
-			if(BRindex > 6 || BRindex < 1)
+			if(ball_row_index > 6 || ball_row_index < 1)
 				wall = wall * -1;
 			
-			if(BCindex < 2)
+			if(ball_col_index < 2)
 			{	
-				if(BRindex == 0)
+				if(ball_row_index == 0)
 				{
 					if(P1INDEX == 0)
 					{
@@ -572,7 +463,7 @@ void BallPlay()
 						wall = 1;
 					}
 				}
-				else if(BRindex == 1)
+				else if(ball_row_index == 1)
 				{
 					if(P1INDEX == 0)
 					{
@@ -585,7 +476,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 2)
+				else if(ball_row_index == 2)
 				{
 					if(P1INDEX == 0)
 					{
@@ -603,7 +494,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 3)
+				else if(ball_row_index == 3)
 				{
 					if(P1INDEX == 1)
 					{
@@ -621,7 +512,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 4)
+				else if(ball_row_index == 4)
 				{
 					if(P1INDEX == 2)
 					{
@@ -639,7 +530,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 5)
+				else if(ball_row_index == 5)
 				{
 					if(P1INDEX == 3)
 					{
@@ -657,7 +548,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 6)
+				else if(ball_row_index == 6)
 				{
 					if(P1INDEX == 4)
 					{
@@ -670,7 +561,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 7)
+				else if(ball_row_index == 7)
 				{
 					if(P1INDEX == 5)
 					{
@@ -680,15 +571,15 @@ void BallPlay()
 				}
 				else
 				{
-					P2BOOL = 1;
+					p2bool = 1;
 					
 				}
 			}
 			
 			
-			else if(BCindex > 5) 
+			else if(ball_col_index > 5) 
 			{
-				if(BRindex == 0)
+				if(ball_row_index == 0)
 				{
 					if(P2INDEX == 0)
 					{
@@ -696,7 +587,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 1)
+				else if(ball_row_index == 1)
 				{
 					if(P2INDEX == 0)
 					{
@@ -709,7 +600,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 2)
+				else if(ball_row_index == 2)
 				{
 					if(P2INDEX == 0)
 					{
@@ -727,7 +618,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 3)
+				else if(ball_row_index == 3)
 				{
 					if(P2INDEX == 1)
 					{
@@ -745,7 +636,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 4)
+				else if(ball_row_index == 4)
 				{
 					if(P2INDEX == 2)
 					{
@@ -763,7 +654,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 5)
+				else if(ball_row_index == 5)
 				{
 					if(P2INDEX == 3)
 					{
@@ -781,7 +672,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 6)
+				else if(ball_row_index == 6)
 				{
 					if(P2INDEX == 4)
 					{
@@ -794,7 +685,7 @@ void BallPlay()
 						wall = -1;
 					}
 				}
-				else if(BRindex == 7)
+				else if(ball_row_index == 7)
 				{
 					if(P2INDEX == 5)
 					{
@@ -804,7 +695,7 @@ void BallPlay()
 				}
 				else
 				{
-					P1BOOL = 1;
+					p1bool = 1;
 				}
 			}
 			break;
@@ -828,11 +719,10 @@ int main(void)
     {
 		tmpD = PIND;
 		tmpD = ~tmpD;
-		MenuScreen();
-		MatrixPlay();
+		ReadyScreen();
+		LED_Movement();
 		MoveP1();
 		MoveP2();
-		MoveP2bot();
-		BallPlay();
+		MoveBall();
     }
 }
