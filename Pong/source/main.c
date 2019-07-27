@@ -17,19 +17,8 @@ unsigned char p1score = 0;
 unsigned char p2score = 0; 
 unsigned char p1bool = 0; 
 unsigned char p2bool = 0; 
-unsigned char p1_row_movement[6] = {0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0};
-unsigned char P1INDEX = 4;
-unsigned char P1COL = 0xFE;
-unsigned char p2_row_movement[6] = {0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0};
-unsigned char P2INDEX = 4;
-unsigned char P2COL = 0x7F;
-unsigned char ballrow_movement[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-unsigned char ballcol_movement[8] = {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F};
-unsigned char ball_row_index = 3;
-unsigned char ball_col_index = 3;
 
 enum Game_setup {wait_ready, wait, play, wait_score, writeP1, writeP2, winP1, winP2} Game;
-unsigned short wincount = 0;
 unsigned char tmpD;
 
 unsigned char screenStablizer = 0;
@@ -137,10 +126,19 @@ void ReadyScreen()
 	}	
 }
 
+unsigned char p1_row_movement[6] = {0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0};
+unsigned char P1INDEX = 4;
+unsigned char P1COL = 0xFE;
+unsigned char p2_row_movement[6] = {0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0};
+unsigned char P2INDEX = 4;
+unsigned char P2COL = 0x7F;
+unsigned char ballrow_movement[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+unsigned char ballcol_movement[8] = {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F};
+unsigned char ball_row_index = 3;
+unsigned char ball_col_index = 3;
 
 enum Update {waitReadyP1, waitReadyP2, p1Update, p2Update, ballUpdate} LED;
 unsigned char row_movement = 3;
-unsigned short countermatrix = 0;
 void LED_Movement()
 {
 	switch(LED)
@@ -709,20 +707,20 @@ void MoveBall()
 int main(void)
 {
     DDRA = 0xFF; PORTA = 0x00;
-	DDRB = 0xFF; PORTB = 0x00;
-	DDRC = 0xFF; PORTC = 0x00; 
-	DDRD = 0xE0; PORTD = 0x1F; 
+    DDRB = 0xFF; PORTB = 0x00;
+    DDRC = 0xFF; PORTC = 0x00; 
+    DDRD = 0xE0; PORTD = 0x1F; 
 	
-	LCD_init();
+    LCD_init();
 	
-	while(1)
+    while(1)
     {
-		tmpD = PIND;
-		tmpD = ~tmpD;
-		ReadyScreen();
-		LED_Movement();
-		MoveP1();
-		MoveP2();
-		MoveBall();
+	tmpD = PIND;
+	tmpD = ~tmpD;
+	ReadyScreen();
+	LED_Movement();
+	MoveP1();
+	MoveP2();
+	MoveBall();
     }
 }
