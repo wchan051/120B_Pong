@@ -28,24 +28,20 @@ void ReadyScreen()
 	switch(Game)
 	{
 		case wait_ready:
-			if((tmpD & 0x1F) == 0x00)
-			{
+			if((tmpD & 0x1F) == 0x00) {
 				START = 0;
 				p1score = 0;
 				p2score = 0;
 				Game = wait_ready;
 			}
-			else if((tmpD & 0x1F) == 0x01)
-			{
+			else if((tmpD & 0x1F) == 0x01) {
 				START = 1;
 				Game = wait;
 			}
 			break;
 		case wait:
-			if((tmpD & 0x1F) != 0)
-			{
-				if((tmpD & 0x1F) == 0x01)
-				{
+			if((tmpD & 0x1F) != 0) {
+				if((tmpD & 0x1F) == 0x01) {
 					START = 1;
 				}
 				Game= wait;
@@ -57,24 +53,31 @@ void ReadyScreen()
 			Game = wait_score;
 			break;
 		case wait_score:
-			if(!p1bool && !p2bool)
+			if(!p1bool && !p2bool) {
 				Game = wait_score;
-			else if(p1bool)
+			}
+			else if(p1bool) {
 				Game = writeP1;
-			else if(p2bool)
+			}
+			else if(p2bool) {
 				Game = writeP2;
+			}
 			break;
 		case writeP1:
-			if(p1score == 5) 
+			if(p1score == 5) {
 				Game = winP2;
-			else
+			}
+			else {
 				Game = wait_score;
+			}
 			break;
 		case writeP2:
-			if(p2score == 5)
+			if(p2score == 5) {
 				Game = winP1;
-			else
+			}
+			else {
 				Game = wait_score;
+			}
 			break;
 		case winP1:
 			Game = wait_ready;
@@ -144,38 +147,42 @@ void LED_Movement()
 	switch(LED)
 	{
 		case waitReadyP1:
-			if(!READY)
-			{
+			if(!READY) {
 				LED = waitReadyP1;
 			}
 			else if(READY)
 				LED = p1Update;
 			break;
 		case waitReadyP2:
-			if(!READY)
-			{
+			if(!READY) {
 				LED = waitReadyP2;
 			}
 			else if(READY)
 				LED = p1Update;
 			break;
 		case p1Update:
-			if(!READY)
+			if(!READY) {
 				LED = waitReadyP1;
-			else if(READY)
+			}
+			else if(READY) {
 				LED = p2Update;
+			}
 			break;
 		case p2Update:
-			if(!READY)
+			if(!READY) {
 				LED = waitReadyP1;
-			else if(READY)
+			}
+			else if(READY) {
 				LED = ballUpdate;
+			}
 			break;
 		case ballUpdate:
-			if(!READY)
+			if(!READY) {
 				LED = waitReadyP1;
-			else if(READY)
+			}
+			else if(READY) {
 				LED = p1Update;
+			}
 			break;
 	}
 	switch(LED)
@@ -216,20 +223,23 @@ void MoveP1()
 	switch(P1Movement)
 	{
 		case p1_wait:
-			if(!READY)
+			if(!READY) {
 				P1Movement = p1_wait;
+			}
 			else if (READY)
 				P1Movement = p1_move;
 			break;
 		case p1_move:
-			if(READY)
-			{
-				if((!(tmpD & 0x01) && !(tmpD & 0x02)) || ((tmpD & 0x01) && (tmpD & 0x02)))
+			if(READY) {
+				if((!(tmpD & 0x01) && !(tmpD & 0x02)) || ((tmpD & 0x01) && (tmpD & 0x02))) {
 					P1Movement = p1_move;
-				else if(tmpD & 0x01)
+				}
+				else if(tmpD & 0x01) {
 					P1Movement = p1_up;
-				else if(tmpD & 0x02)
+				}
+				else if(tmpD & 0x02) {
 					P1Movement = p1_down;
+				}
 			}
 			else
 				P1Movement = p1_wait;
@@ -241,10 +251,12 @@ void MoveP1()
 			P1Movement = p1_stop;
 			break;
 		case p1_stop:
-			if(counterp1 == 2500)
+			if(counterp1 == 2500) {
 				P1Movement = p1_move;
-			else
+			}
+			else {
 				P1Movement = p1_stop;
+			}
 			break;
 	}	
 	switch(P1Movement)
@@ -256,16 +268,20 @@ void MoveP1()
 			counterp1 = 0;
 			break;
 		case p1_up:
-			if(P1INDEX < 5)
+			if(P1INDEX < 5) {
 				P1INDEX++;
-			else
+			}
+			else {
 				P1INDEX = P1INDEX;
+			}
 			break;
 		case p1_down:
-			if(P1INDEX > 0)
+			if(P1INDEX > 0) {
 				P1INDEX--;
-			else
+			}
+			else {
 				P1INDEX = P1INDEX;
+			}
 			break;
 		case p1_stop:
 			counterp1++;
@@ -280,24 +296,30 @@ void MoveP2()
 	switch(P2Movement)
 	{
 		case p2_wait:
-			if(!READY && !START)
+			if(!READY && !START) {
 				P2Movement = p2_wait;
-			else if (READY && START)
+			}
+			else if (READY && START) {
 				P2Movement = p2_move;
-			else
+			}
+			else {
 				P2Movement = p2_wait;
+			}
 			break;
 		case p2_move:
-			if(!READY)
+			if(!READY) {
 				P2Movement = p2_wait;
-			else if(READY && START)
-			{
-				if((!(tmpD & 0x04) && !(tmpD & 0x08)) || ((tmpD & 0x04) && (tmpD & 0x08)))
+			}
+			else if(READY && START) {
+				if((!(tmpD & 0x04) && !(tmpD & 0x08)) || ((tmpD & 0x04) && (tmpD & 0x08))) {
 					P2Movement = p2_move;
-				else if(tmpD & 0x04)
+				}
+				else if(tmpD & 0x04) {
 					P2Movement = p2_up;
-				else if(tmpD & 0x08)
+				}
+				else if(tmpD & 0x08) {
 					P2Movement = p2_down;
+				}
 			}
 			break;
 		case p2_up:
@@ -307,10 +329,12 @@ void MoveP2()
 			P2Movement = p2_stop;
 			break;
 		case p2_stop:
-			if(counterp2 == 2500)
+			if(counterp2 == 2500) {
 				P2Movement = p2_move;
-			else
+			}
+			else {
 				P2Movement = p2_stop;
+			}
 			break;
 	}
 	switch(P2Movement)
@@ -322,14 +346,17 @@ void MoveP2()
 			counterp2 = 0;
 			break;
 		case p2_up:
-			if(P2INDEX < 5)
+			if(P2INDEX < 5) {
 				P2INDEX++;
-			else
+			}
+			else {
 				P2INDEX = P2INDEX;
+			}
 			break;
 		case p2_down:
-			if(P2INDEX > 0)
-				P2INDEX--;
+			if(P2INDEX > 0) {
+				P2INDEX--; 
+			}
 			else
 				P2INDEX = P2INDEX;
 			break;
@@ -349,46 +376,49 @@ void MoveBall()
 	switch(Ball)
 	{
 		case wait_ball:
-			if(!READY)
+			if(!READY) {
 				Ball = wait_ball;
-			else if(READY)
+			}
+			else if(READY) {
 				Ball = start;
+			}
 			break;
 		case start:
-			if(!READY)
+			if(!READY) {
 				Ball = wait_ball;
-			else
-				Ball = start_wait;
+			}
+			else { 
+				Ball = start_wait; 
+			}
 			break;
 		case start_wait:
-			if(startcounter != 10000)
+			if(startcounter != 10000) {
 				Ball = start_wait;
-			else if(startcounter == 10000)
-			{
+			}
+			else if(startcounter == 10000) {
 				startcounter = 0;
 				Ball = move_ball;
 			}	
 			break;
 		case move_ball:
 			startcounter = 0;
-			if(ball_col_index == 0)
-			{
+			if(ball_col_index == 0) {
 				p2bool = 1;
 				Ball = start;
 			}
-			else if(ball_col_index == 7)
-			{
+			else if(ball_col_index == 7) {
 				p1bool = 1;
 				Ball = start;
 			}
-			else
+			else {
 				Ball = stop_ball;
+			}
 			break;
 		case stop_ball:
-			if(ballcounter != (4000))
+			if(ballcounter != (4000)) {
 				Ball = stop_ball;
-			else
-			{
+			}
+			else {
 				ballcounter = 0;
 				if(p1bool)
 					Ball = start;
@@ -399,15 +429,13 @@ void MoveBall()
 			}
 			break;
 	}	
-	switch(Ball)
-	{
+	switch(Ball) {
 		case wait_ball:
 			p1bool = 0;
 			p2bool = 0;
 			break;
 		case start:
-			if(!p1bool && !p2bool)
-			{
+			if(!p1bool && !p2bool) {
 				hit = -1;
 				wall = 0;
 				ball_row_index = 4;
@@ -417,8 +445,7 @@ void MoveBall()
 				p1bool = 0;
 				p2bool = 0;
 			}
-			else if(p1bool)
-			{
+			else if(p1bool) {
 				hit = 1;
 				wall = 0;
 				ball_row_index = 4;
@@ -427,8 +454,7 @@ void MoveBall()
 				P2INDEX = 3;
 				p1score++;
 			}
-			else if(p2bool)
-			{
+			else if(p2bool) {
 				hit = -1;
 				wall = 0;
 				ball_row_index = 4;
@@ -448,251 +474,195 @@ void MoveBall()
 			ball_row_index = ball_row_index + wall;
 			ball_col_index = ball_col_index + hit;
 			
-			if(ball_row_index > 6 || ball_row_index < 1)
+			if(ball_row_index > 6 || ball_row_index < 1) {
 				wall = wall * -1;
-			
-			if(ball_col_index < 2)
-			{	
-				if(ball_row_index == 0)
-				{
-					if(P1INDEX == 0)
-					{
+			}
+			if(ball_col_index < 2) {	
+				if(ball_row_index == 0) {
+					if(P1INDEX == 0) {
 						hit = 1;
 						wall = 1;
 					}
 				}
-				else if(ball_row_index == 1)
-				{
-					if(P1INDEX == 0)
-					{
+				else if(ball_row_index == 1) {
+					if(P1INDEX == 0) {
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1INDEX == 1)
-					{
+					else if(P1INDEX == 1) {
 						hit = 1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 2)
-				{
-					if(P1INDEX == 0)
-					{
+				else if(ball_row_index == 2) {
+					if(P1INDEX == 0) {
 						hit = 1;
 						wall = 1;
 					}
-					else if(P1INDEX == 1)
-					{
+					else if(P1INDEX == 1) {
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1INDEX == 2)
-					{
+					else if(P1INDEX == 2) {
 						hit = 1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 3)
-				{
-					if(P1INDEX == 1)
-					{
+				else if(ball_row_index == 3) {
+					if(P1INDEX == 1) {
 						hit = 1;
 						wall = 1;
 					}
-					else if(P1INDEX == 2)
-					{
+					else if(P1INDEX == 2) {
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1INDEX == 3)
-					{
+					else if(P1INDEX == 3) {
 						hit = 1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 4)
-				{
-					if(P1INDEX == 2)
-					{
+				else if(ball_row_index == 4) {
+					if(P1INDEX == 2) {
 						hit = 1;
 						wall = 1;
 					}
-					else if(P1INDEX == 3)
-					{
+					else if(P1INDEX == 3) {
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1INDEX == 4)
-					{
+					else if(P1INDEX == 4) {
 						hit = 1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 5)
-				{
-					if(P1INDEX == 3)
-					{
+				else if(ball_row_index == 5) {
+					if(P1INDEX == 3) {
 						hit = 1;
 						wall = 1;
 					}
-					else if(P1INDEX == 4)
-					{
+					else if(P1INDEX == 4) {
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1INDEX == 5)
-					{
+					else if(P1INDEX == 5) {
 						hit = 1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 6)
-				{
-					if(P1INDEX == 4)
-					{
+				else if(ball_row_index == 6) {
+					if(P1INDEX == 4) {
 						hit = 1;
 						wall = 0;
 					}
-					else if(P1INDEX == 5)
-					{
+					else if(P1INDEX == 5) {
 						hit = 1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 7)
-				{
-					if(P1INDEX == 5)
-					{
+				else if(ball_row_index == 7) {
+					if(P1INDEX == 5) {
 						hit = 1;
 						wall = -1;
 					}
 				}
-				else
-				{
+				else {
 					p2bool = 1;
 					
 				}
 			}
 			
 			
-			else if(ball_col_index > 5) 
-			{
-				if(ball_row_index == 0)
-				{
-					if(P2INDEX == 0)
-					{
+			else if(ball_col_index > 5)  {
+				if(ball_row_index == 0) {
+					if(P2INDEX == 0) {
 						hit = -1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 1)
-				{
-					if(P2INDEX == 0)
-					{
+				else if(ball_row_index == 1) {
+					if(P2INDEX == 0) {
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2INDEX == 1)
-					{
+					else if(P2INDEX == 1) {
 						hit = -1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 2)
-				{
-					if(P2INDEX == 0)
-					{
+				else if(ball_row_index == 2) {
+					if(P2INDEX == 0) {
 						hit = -1;
 						wall = 1;
 					}
-					else if(P2INDEX == 1)
-					{
+					else if(P2INDEX == 1) {
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2INDEX == 2)
-					{
+					else if(P2INDEX == 2) {
 						hit = -1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 3)
-				{
-					if(P2INDEX == 1)
-					{
+				else if(ball_row_index == 3) {
+					if(P2INDEX == 1) {
 						hit = -1;
 						wall = 1;
 					}
-					else if(P2INDEX == 2)
-					{
+					else if(P2INDEX == 2) {
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2INDEX == 3)
-					{
+					else if(P2INDEX == 3) {
 						hit = -1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 4)
-				{
-					if(P2INDEX == 2)
-					{
+				else if(ball_row_index == 4) {
+					if(P2INDEX == 2) {
 						hit = -1;
 						wall = 1;
 					}
-					else if(P2INDEX == 3)
-					{
+					else if(P2INDEX == 3) {
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2INDEX == 4)
-					{
+					else if(P2INDEX == 4) {
 						hit = -1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 5)
-				{
-					if(P2INDEX == 3)
-					{
+				else if(ball_row_index == 5) {
+					if(P2INDEX == 3) {
 						hit = -1;
 						wall = 1;
 					}
-					else if(P2INDEX == 4)
-					{
+					else if(P2INDEX == 4) {
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2INDEX == 5)
-					{
+					else if(P2INDEX == 5) {
 						hit = -1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 6)
-				{
-					if(P2INDEX == 4)
-					{
+				else if(ball_row_index == 6) {
+					if(P2INDEX == 4) {
 						hit = -1;
 						wall = 0;
 					}
-					else if(P2INDEX == 5)
-					{
+					else if(P2INDEX == 5) {
 						hit = -1;
 						wall = -1;
 					}
 				}
-				else if(ball_row_index == 7)
-				{
-					if(P2INDEX == 5)
-					{
+				else if(ball_row_index == 7) {
+					if(P2INDEX == 5) {
 						hit = -1;
 						wall = -1;
 					}
 				}
-				else
-				{
+				else {
 					p1bool = 1;
 				}
 			}
