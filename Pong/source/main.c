@@ -271,16 +271,10 @@ void MoveP1()
 			if(P1INDEX < 5) {
 				P1INDEX++;
 			}
-			else {
-				P1INDEX = P1INDEX;
-			}
 			break;
 		case p1_down:
 			if(P1INDEX > 0) {
 				P1INDEX--;
-			}
-			else {
-				P1INDEX = P1INDEX;
 			}
 			break;
 		case p1_stop:
@@ -349,16 +343,11 @@ void MoveP2()
 			if(P2INDEX < 5) {
 				P2INDEX++;
 			}
-			else {
-				P2INDEX = P2INDEX;
-			}
 			break;
 		case p2_down:
 			if(P2INDEX > 0) {
 				P2INDEX--; 
 			}
-			else
-				P2INDEX = P2INDEX;
 			break;
 		case p2_stop:
 			counterp2++;
